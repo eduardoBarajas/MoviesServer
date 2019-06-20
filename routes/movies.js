@@ -51,7 +51,7 @@ router.post('/save', function(req, res) {
             if (err) {
                 setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });
             } else {
-                setResponse("Success", { message: 'Se encontraron peliculas con exito.' });
+                setResponse("Success", { message: 'Se agregaron las peliculas con exito.' });
             }
             res.send(response);
         });
