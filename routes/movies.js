@@ -12,8 +12,8 @@ const response = {
 router.get('/:year', function(req, res) {
     let year = req.params.year;
     try {
-        if (fs.existsSync('public/jsons/movies-'+year+'.json')) {
-            let rawdata = fs.readFileSync('public/jsons/movies-'+year+'.json');  
+        if (fs.existsSync('jsons/movies-'+year+'.json')) {
+            let rawdata = fs.readFileSync('jsons/movies-'+year+'.json');  
             response.data = JSON.parse(rawdata); 
             response.message = 'Se obtuvieron las peliculas con exito.';
             response.status = 'Success';
@@ -33,7 +33,7 @@ router.get('/:year', function(req, res) {
 router.post('/save', function(req, res) {
     let year = req.body.year
     try {
-        fs.writeFileSync('public/jsons/movies-'+year+'.json', req.body.data); 
+        fs.writeFileSync('jsons/movies-'+year+'.json', req.body.data); 
         response.message = 'Se agregaron las peliculas al archivo.';
         response.status = 'Success';
       } catch(err) {
