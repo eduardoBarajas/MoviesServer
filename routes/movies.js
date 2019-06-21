@@ -90,6 +90,24 @@ router.put('/update_links', function(req, res) {
     });
 });
 
+router.delete('/delete_links', function(req, res) {
+    ModeloPeliculas.findOne( { year: req.body.year, name: req.body.name }, function(err, movie) {
+        if (err) {
+            setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
+            res.send(response);
+        }
+        if (!movie) {
+            setResponse("Error", {message: 'No se pudieron eliminar los links.'});
+        } else {
+            movie.modification_date = req.body.date;
+            movie.movie_links = [];
+            movie.save();
+            setResponse("Success", {message: 'Se eliminaron los links de la pelicula con exito.'});
+        }
+        res.send(response);
+    });
+});
+
 
 /*
     La funcion convertJsonToList convierte un objecto del tipo json a una lista de diccionarios.
