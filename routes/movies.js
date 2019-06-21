@@ -26,7 +26,7 @@ router.get('/:year', function(req, res) {
           setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
           res.send(response);
         }
-        if (!movies) {
+        if (!movies || movies.length < 1) {
             setResponse("Error", {message: 'No se encontraron peliculas de este año.'});
         } else {
             setResponse("Success", { message: 'Se encontraron peliculas con exito.', year: req.params.year, modification_date: req.body.modification_date, count: movies.length, movies: movies });
