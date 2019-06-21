@@ -3,17 +3,17 @@ var Schema = mongoose.Schema;
 
 var schema = new Schema({
     year: Number,
-    movie_links: [String],
+    movieLinks: [String],
     tags: String,
     poster: String,
     href: String,
     name: String,
-    original_name: String,
+    originalName: String,
     synopsis: String,
     cast: String,
     genres: String,
-    lenght: String,
-    modification_date: String
+    length: String,
+    modificationDate: String
 });
 
 var MovieModel = mongoose.model('Movies', schema);
