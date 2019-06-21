@@ -14,59 +14,97 @@ const response = {
     movies: null
 };
 
+const list_of_fields = ['anio', 'links_videos', 'tags', 'poster', 'href', 'nombre',
+        'titulo_original', 'sinopsis', 'reparto', 'generos', 'duracion'];
+
+/*
+    con la ruta que esta a continuacion se realiza una busqueda por anio para que regrese todas las peliculas de ese anio.
+*/
 router.get('/:year', function(req, res) {
-    var found = false;    
-    ModeloPeliculas.find( {}, function(err, movies) {
+    ModeloPeliculas.find( { year: req.params.year }, function(err, movies) {
         if (err) {
           setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
           res.send(response);
         }
-        movies.forEach( movie => {
-            if (movie.year == req.params.year) {
-                setResponse("Success", { message: 'Se encontraron peliculas con exito.', year: movie.year, modification_date: movie.modification_date, count: movie.movie_count, movies: JSON.parse(movie.movies) });
-                found = !found;
-            }
-        });
-        if (!found) {
+        if (!movies) {
             setResponse("Error", {message: 'No se encontraron peliculas de este año.'});
+        } else {
+            setResponse("Success", { message: 'Se encontraron peliculas con exito.', year: req.params.year, modification_date: req.body.modification_date, count: movies.length, movies: movies });
         }
         res.send(response);
     });
 });
 
 router.post('/save', function(req, res) {
-    ModeloPeliculas.find( {}, function(err, peliculas) {
-      if (err) {
-        setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
-        res.send(response);
-      }
-      var found = false;
-      peliculas.forEach( movie => {
-        if (movie.year == req.body.year)
-            found = true;
-      });
-      if (!found) {
-        var nuevas_peliculas = new ModeloPeliculas({ year: req.body.year, movie_count: req.body.count, modification_date: req.body.date, movies: req.body.movies });
-        nuevas_peliculas.save(function (err, peliculas) {
+    var movie_list = convertJsonToList(JSON.parse(req.body.movies), req.body.count);
+    movie_list.forEach( mov => {
+        ModeloPeliculas.findOne( { year: mov['anio'], name: mov['nombre'] }, function(err, movie) {
             if (err) {
-                setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });
-            } else {
-                setResponse("Success", { message: 'Se agregaron las peliculas con exito.' });
+                setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
+                res.send(response);
             }
-            res.send(response);
-        });
-      } else {
-        ModeloPeliculas.updateOne({ year: req.body.year }, { movie_count: req.body.count, modification_date: req.body.date, movies: req.body.movies }, function(err) {
-           if (err) {
-                setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });
+            if (!movie) {
+                // si no se encuentra en la base de datos entonces de procede a crear una nueva instancia.
+                var new_movie = new ModeloPeliculas({ year: mov['anio'], movie_links: mov['links_videos'], tags: mov['tags'],
+                    poster: mov['poster'], href: mov['href'], name: mov['nombre'], original_name: mov['titulo_original'],
+                    synopsis: mov['sinopsis'], cast: mov['reparto'], genres: mov['generos'], lenght: mov['duracion'], modification_date: req.body.date });
+                new_movie.save();
             } else {
-                setResponse("Success", { message: 'Se actualizaron las peliculas con exito.' });
+                // si se encuentra la pelicula, entonces se determina que datos pueden ser modificados.
+                if (mov['tags'] != '') 
+                    movie.tags = mov['tags'];
+                if (mov['poster'] != '') 
+                    movie.poster = mov['poster'];
+                if (mov['reparto'] != '') 
+                    movie.cast = mov['reparto'];
+                if (mov['generos'] != '') 
+                    movie.genres = mov['generos'];
+                movie.modification_date = req.body.date;
+                mov['links_videos'].forEach( link => {
+                    if (!movie.movie_links.includes(link))
+                        movie.movie_links.push(link);
+                });
+                movie.save();
             }
-            res.send(response);
         });
-      }
+    });
+    setResponse("Success", { message: 'Se realizo la modificacion a las peliculas con exito.' });
+    res.send(response);
+});
+
+router.put('/update_links', function(req, res) {
+    ModeloPeliculas.findOne( { year: req.body.year, name: req.body.name }, function(err, movie) {
+        if (err) {
+            setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
+            res.send(response);
+        }
+        if (!movie) {
+            setResponse("Error", {message: 'No se pudieron actualizar los links.'});
+        } else {
+            movie.modification_date = req.body.date;
+            movie.movie_links = JSON.parse(req.body.links);
+            movie.save();
+            setResponse("Success", {message: 'Se actualizaron los links de la pelicula con exito.'});
+        }
+        res.send(response);
     });
 });
+
+
+/*
+    La funcion convertJsonToList convierte un objecto del tipo json a una lista de diccionarios.
+*/
+function convertJsonToList(movies, size) {
+    var list = [];
+    for (let x = 0; x < size; x++) {
+        let movie = {};
+        list_of_fields.forEach( field => {
+            movie[field] = movies[x][field];
+        });
+        list.push(movie);
+    }
+    return list;
+}
 
 function setResponse(status, data) {
     if (status == "Error" || data.year == undefined) {
