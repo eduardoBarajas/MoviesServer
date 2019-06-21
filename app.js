@@ -4,11 +4,11 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var cors = require('cors')
 
 var movies = require('./routes/movies');
 
 var app = express();
-
 var mongoose = require('mongoose');
 var mongo_uri = "mongodb+srv://barajasEduardo:"+encodeURIComponent('@Lalox199524')+"@basededatos-dlaan.mongodb.net/test?retryWrites=true&w=majority";
 mongoose.connect(mongo_uri, {useNewUrlParser: true});
@@ -25,6 +25,7 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+app.use(cors())
 app.use(favicon());
 app.use(logger('dev'));
 app.use(bodyParser.json());
