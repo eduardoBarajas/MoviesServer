@@ -68,7 +68,8 @@ router.post('/save', function(req, res) {
                         if (!movie.movieLinks.includes(link))
                             movie.movieLinks.push(link);
                     });
-                } catch(exceoption) { // si entra aqui es por que estaba vacio el campo de los links}
+                } catch(exceoption) { // si entra aqui es por que estaba vacio el campo de los links
+                }
                 movie.save();
             }
         });
