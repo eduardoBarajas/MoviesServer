@@ -37,14 +37,17 @@ router.get('/:year', function(req, res) {
 
 router.post('/save', function(req, res) {
     var movie_list = convertJsonToList(JSON.parse(req.body.movies), req.body.count);
+    const peliculas = new Set();
     movie_list.forEach( mov => {
-        ModeloPeliculas.findOne( { year: mov['year'], name: mov['name'] }, function(err, movie) {
+	if (!peliculas.has(mov['name'])) {
+	  peliculas.add(mov['name']);
+	  ModeloPeliculas.findOne( { year: mov['year'], name: mov['name'] }, function(err, movie) {
             if (err) {
                 setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
                 res.send(response);
             }
             if (!movie) {
-                // si no se encuentra en la base de datos entonces de procede a crear una nueva instancia.
+		// si no se encuentra en la base de datos entonces de procede a crear una nueva instancia.
                 var new_movie = new ModeloPeliculas({ year: mov['year'], movieLinks: mov['movieLinks'], tags: mov['tags'],
                     poster: mov['poster'], href: mov['href'], name: mov['name'], originalName: mov['originalName'],
                     synopsis: mov['synopsis'], cast: mov['cast'], genres: mov['genres'], length: mov['length'], modificationDate: req.body.date });
@@ -60,13 +63,16 @@ router.post('/save', function(req, res) {
                 if (mov['genres'] != '') 
                     movie.genres = mov['genres'];
                 movie.modificationDate = req.body.date;
-                mov['movieLinks'].forEach( link => {
-                    if (!movie.movieLinks.includes(link))
-                        movie.movieLinks.push(link);
-                });
+                try{
+                    mov['movieLinks'].forEach( link => {
+                        if (!movie.movieLinks.includes(link))
+                            movie.movieLinks.push(link);
+                    });
+                } catch(exceoption) { // si entra aqui es por que estaba vacio el campo de los links}
                 movie.save();
             }
         });
+	}
     });
     setResponse("Success", { message: 'Se realizo la modificacion a las peliculas con exito.' });
     res.send(response);
@@ -108,7 +114,6 @@ router.delete('/delete_links', function(req, res) {
     });
 });
 
-
 /*
     La funcion convertJsonToList convierte un objecto del tipo json a una lista de diccionarios.
 */
@@ -117,7 +122,11 @@ function convertJsonToList(movies, size) {
     for (let x = 0; x < size; x++) {
         let movie = {};
         list_of_fields.forEach( field => {
-            movie[field] = movies[x][field];
+            try{
+                movie[field] = movies[x][field];
+            } catch(exception) {
+                movie[field] = "";
+            }
         });
         list.push(movie);
     }
