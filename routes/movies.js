@@ -35,6 +35,79 @@ router.get('/:year', function(req, res) {
     });
 });
 
+
+router.get('/links/all', function(req, res) {
+    ModeloPeliculas.find( {}, function(err, movies) {
+        if (err) {
+            setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
+            res.send(response);
+        }
+        if (movies.length < 1) {
+            setResponse("Error", {message: 'No se encontraron peliculas.'});
+        } else {
+            let links = [];
+            movies.forEach( movie => {
+                let links_relation = {name: '', year: 0, links_movie: []};
+                links_relation.name = movie.name;
+                links_relation.year = movie.year;
+                movie.movieLinks.forEach( link => {
+                    links_relation.links_movie.push(link);
+                });
+                links.push(links_relation);
+            });
+            let linksResponse = { status: 'Success', message: 'Se encontraron los links', moviesLinks: links };
+            res.send(linksResponse);
+        }
+    });
+});
+
+router.put('/links/update_links', function(req, res) {
+    ModeloPeliculas.findOne( { year: req.body.year, name: req.body.name }, function(err, movie) {
+        if (err) {
+            setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
+            res.send(response);
+        }
+        if (!movie) {
+            setResponse("Error", {message: 'No se encontro esa pelicula.'});
+        } else {
+            console.log(movie.name);
+            console.log(movie.year);
+            // se obtienen los arreglos que se utilizaran para modificar los links de la pelicula
+            let requestAddLinks = JSON.parse(req.body.linksUp);
+            let requestDeleteLinks = JSON.parse(req.body.linksDown);
+            // se usa el ordenamiento bubble sort para ordenar los indices de los elementos eliminar.
+            for (let i = 0; i < requestDeleteLinks.length; i++) {
+                for (let j = 0; j < requestDeleteLinks.length - i - 1; j++) {
+                    if (requestDeleteLinks[j] > requestDeleteLinks[j+1]) {
+                        let temp = requestDeleteLinks[j+1];
+                        requestDeleteLinks[j+1] = requestDeleteLinks[j];
+                        requestDeleteLinks[j] = temp;
+                    }
+                } 
+            }
+            // Se ua la variable countErased para llevar la cuenta de cuantos se han eliminado y poder mover el indice del arreglo al sacar un elemento.
+            let countErased = 0;
+            requestDeleteLinks.forEach( index => {
+                let i = index - countErased;
+                if (movie.movieLinks.indexOf(i) != null) {
+                    console.log('removed: '+movie.movieLinks.splice(i, 1));
+                }
+                countErased += 1;
+            });
+            requestAddLinks.forEach( link => {
+                if (!movie.movieLinks.includes(link)) {
+                    console.log('Added: '+link);
+                    movie.movieLinks.push(link);
+                }
+            }); 
+            movie.modificationDate = req.body.date;
+            movie.save();
+            setResponse("Success", {message: 'Se actualizaron los links de la pelicula con exito.'});
+        }
+        res.send(response);
+    });
+});
+
 router.post('/save', function(req, res) {
     var movie_list = convertJsonToList(JSON.parse(req.body.movies), req.body.count);
     const peliculas = new Set();
@@ -77,24 +150,6 @@ router.post('/save', function(req, res) {
     });
     setResponse("Success", { message: 'Se realizo la modificacion a las peliculas con exito.' });
     res.send(response);
-});
-
-router.put('/update_links', function(req, res) {
-    ModeloPeliculas.findOne( { year: req.body.year, name: req.body.name }, function(err, movie) {
-        if (err) {
-            setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
-            res.send(response);
-        }
-        if (!movie) {
-            setResponse("Error", {message: 'No se pudieron actualizar los links.'});
-        } else {
-            movie.modificationDate = req.body.date;
-            movie.movieLinks = JSON.parse(req.body.links);
-            movie.save();
-            setResponse("Success", {message: 'Se actualizaron los links de la pelicula con exito.'});
-        }
-        res.send(response);
-    });
 });
 
 router.delete('/delete_links', function(req, res) {
