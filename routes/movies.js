@@ -16,7 +16,6 @@ const response = {
 
 const list_of_fields = ['year', 'movieLinks', 'tags', 'poster', 'href', 'name',
         'originalName', 'synopsis', 'cast', 'genres', 'length'];
-
 /*
     con la ruta que esta a continuacion se realiza una busqueda por anio para que regrese todas las peliculas de ese anio.
 */
@@ -35,6 +34,20 @@ router.get('/:year', function(req, res) {
     });
 });
 
+router.get('/links/name/:name/year/:year', function(req, res) {
+    ModeloPeliculas.findOne( { name: req.params.name, year: req.params.year }, function(err, movie) {
+        if (err) {
+          setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
+          res.send(response);
+        }
+        if (!movie) {
+            setResponse("Error", {message: 'No se encontraron peliculas de este año.'});
+            res.send(response);
+        } else {
+           res.send({status: 'Success', message: 'Links Obtenidos Con Exito.', links: movie.movieLinks});
+        }
+    });
+});
 
 router.get('/links/all', function(req, res) {
     ModeloPeliculas.find( {}, function(err, movies) {
