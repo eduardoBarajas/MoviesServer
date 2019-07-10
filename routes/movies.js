@@ -35,7 +35,7 @@ router.get('/:year', function(req, res) {
 });
 
 router.get('/links/name/:name/year/:year', function(req, res) {
-    ModeloPeliculas.findOne( { name: req.params.name, year: req.params.year }, function(err, movie) {
+    ModeloPeliculas.findOne( { name: decodeURIComponent(req.params.name), year: req.params.year }, function(err, movie) {
         if (err) {
           setResponse("Error", { message: 'Ocurrio un error con el servidor:' + JSON.stringify(err) });        
           res.send(response);
